@@ -1,0 +1,21 @@
+{
+  "name": "free-time-line-bot",
+  "version": "1.0.0",
+  "description": "仕事用空き時間確認LINE Bot（Googleカレンダー連携）",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["line", "google-calendar", "bot"],
+  "license": "MIT",
+  "dependencies": {
+    "@line/bot-sdk": "^9.0.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "googleapis": "^128.0.0"
+  }
+}
