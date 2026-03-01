@@ -67,9 +67,12 @@ router.get('/google/callback', async (req, res) => {
   }
   const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   try {
-    const { credentials } = await oauth2Client.getToken(code);
-    const refreshToken = credentials.refresh_token;
+    const result = await oauth2Client.getToken(code);
+    // ライブラリのバージョンで credentials / tokens / 直の payload で返る場合がある
+    const payload = result.credentials || result.tokens || result;
+    const refreshToken = payload && payload.refresh_token;
     if (!refreshToken) {
+      console.error('[OAuth] レスポンスに refresh_token なし:', JSON.stringify(Object.keys(result || {})));
       return res.status(400).send(
         'リフレッシュトークンが取得できませんでした。Google で「許可」を押したうえで、再度お試しください。'
       );
@@ -81,7 +84,11 @@ router.get('/google/callback', async (req, res) => {
     );
   } catch (err) {
     console.error('[OAuth] トークン取得失敗:', err.message);
-    res.status(500).send('トークンの取得に失敗しました。しばらくしてから再度お試しください。');
+    if (err.response) console.error('[OAuth] 詳細:', err.response.data || err.response.status);
+    res.status(500).send(
+      'トークンの取得に失敗しました。しばらくしてから再度お試しください。' +
+        '（Render の Logs に「[OAuth] トークン取得失敗」の詳細が出ます）'
+    );
   }
 });
 

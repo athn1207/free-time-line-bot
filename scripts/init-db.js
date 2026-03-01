@@ -19,9 +19,10 @@ if (!url || !url.trim()) {
   process.exit(1);
 }
 
+// Render の PostgreSQL は外部接続で SSL 必須のため、常に SSL 有効にする
 const pool = new Pool({
   connectionString: url,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: { rejectUnauthorized: false },
 });
 
 const schemaPath = path.join(__dirname, '..', 'db', 'schema.sql');
