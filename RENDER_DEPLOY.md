@@ -81,13 +81,26 @@
    - `git push -u origin main`  
    （ブランチが `master` の場合は `git push -u origin master` にする。）
 
+   **「src refspec main does not match any」が出たとき**  
+   - いまのブランチ名を確認する: `git branch` を実行する。  
+   - **`master` と表示されたら** → `git push -u origin master` を実行する。  
+   - **何も表示されない、またはコミットしていない場合** → 先に `git add .` と `git commit -m "Render デプロイ用"` を実行してから、もう一度 `git push -u origin main`（または `git push -u origin master`）を試す。  
+   - **ブランチ名を main にそろえたい場合** → `git branch -M main` を実行してから `git push -u origin main` を実行する。
+
 ---
 
 ## 3. Render で Web サービスを作成する
 
 1. [https://dashboard.render.com](https://dashboard.render.com) にログインする。
 2. **「New +」** をクリックし、**「Web Service」** を選ぶ。
-3. **「Connect a repository」** で、先ほどプッシュした **GitHub リポジトリ** を選び、**「Connect」** する。
+3. **GitHub のリポジトリ一覧を表示する**
+   - **「Connect a repository」** や **「Connect account」** のようなボタンや、**GitHub のロゴ** が表示されている場合  
+     → それをクリックし、表示された一覧から **`athn1207/free-time-line-bot`**（先ほどプッシュしたリポジトリ）を選んで **「Connect」** する。
+   - **「No repositories found」「Connect your Git provider」と表示されている場合**  
+     → 画面にある **「GitHub」** のボタン（またはカード）をクリックする。  
+     → GitHub のログイン・認証画面に飛ぶので、必要なら GitHub にログインし、**「Authorize Render」** や **「Install」** をクリックして Render にリポジトリへのアクセスを許可する。  
+     → 許可が終わると Render の画面に戻る。**「New +」→「Web Service」** をもう一度選ぶ。  
+     → 今度は **GitHub のリポジトリ一覧** が出るので、**`free-time-line-bot`** を選び、**「Connect」** する。
 4. 次のように設定する。
 
    | 項目 | 入力内容 |
@@ -114,6 +127,9 @@
    | `LINE_CHANNEL_ACCESS_TOKEN` | LINE Developers で発行したチャネルアクセストークン | ○ |
    | `GOOGLE_ACCESS_TOKEN` | OAuth 2.0 Playground で取得したアクセストークン | ○ |
    | `GOOGLE_CALENDAR_ID` | 使うカレンダー ID（省略時は `primary`） | △ |
+
+   **※ アクセストークンを期限切れにしたくない場合（推奨）**  
+   下記「リフレッシュトークンで期限切れしないようにする」を設定すると、**GOOGLE_ACCESS_TOKEN は不要**になり、**GOOGLE_CLIENT_ID**・**GOOGLE_CLIENT_SECRET**・**GOOGLE_REFRESH_TOKEN** の 3 つだけで動きます。
 
 3. **「Create Web Service」** をクリックしてデプロイを開始する。
 
@@ -172,4 +188,77 @@
 
 - **無料プラン**では、しばらくアクセスがないとサービスがスリープします。LINE でメッセージを送った直後は応答が遅く感じることがあります。
 - **GOOGLE_ACCESS_TOKEN** は約1時間で期限切れになります。本番で継続して使う場合は、リフレッシュトークンを使う OAuth フローを追加することをおすすめします。
+
+**Render で Google トークンが期限切れになったとき**
+
+1. [OAuth 2.0 Playground](https://developers.google.com/oauthplayground/) で **https://www.googleapis.com/auth/calendar.readonly** にチェック → **Authorize APIs** → **Exchange authorization code for tokens** で新しい **Access token** をコピーする。  
+2. Render ダッシュボード → **free-time-line-bot** → 左メニュー **「Environment」** を開く。  
+3. **GOOGLE_ACCESS_TOKEN** の **Value** を新しいトークンに書き換え、**「Save Changes」** する。  
+4. 環境変数保存後に再デプロイが走る場合がある。完了後、LINE で日付を送って動作確認する。
+
+---
+
+## リフレッシュトークンで期限切れしないようにする
+
+**GOOGLE_CLIENT_ID**・**GOOGLE_CLIENT_SECRET**・**GOOGLE_REFRESH_TOKEN** を設定すると、アクセストークンを自動で更新するため、**約1時間ごとの差し替えが不要**になります。
+
+### 1. Google Cloud Console で OAuth 2.0 の認証情報を用意する
+
+**前に作った OAuth クライアント ID がある場合**  
+→ そのまま使ってかまいません。次の「リダイレクト URI の確認」だけ行ってください。  
+**新規で作る場合**  
+→ 下記 2〜5 の手順で作成します。
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → 対象プロジェクト（Calendar API を有効にしているもの）→ **「API とサービス」** → **「認証情報」**。
+2. 既存の **「OAuth 2.0 クライアント ID」** をクリックして編集するか、**「+ 認証情報を作成」** → **「OAuth クライアント ID」** で新規作成する。
+3. アプリケーションの種類は **「ウェブアプリケーション」**。
+4. **「承認済みのリダイレクト URI」** に **`https://developers.google.com/oauthplayground/code`** が含まれているか確認する。無ければ 1 件追加して保存。
+5. **クライアント ID** と **クライアントシークレット** をコピーする（これが `GOOGLE_CLIENT_ID` と `GOOGLE_CLIENT_SECRET`）。
+
+### 2. OAuth 2.0 Playground でリフレッシュトークンを取得する
+
+1. [OAuth 2.0 Playground](https://developers.google.com/oauthplayground/) を開く。
+2. 右上の **歯車アイコン** をクリックし、**「Use your own OAuth credentials」** にチェックを入れる。
+3. **OAuth Client ID** と **OAuth Client secret** に、手順 1 でコピーした値を貼り付けて **「Close」**。
+4. 左側の一覧で **「Calendar API v3」** の **`https://www.googleapis.com/auth/calendar.readonly`** にチェックを入れる。
+5. **「Authorize APIs」** をクリックし、Google でログインして **「許可」** する。
+6. **「Exchange authorization code for tokens」** をクリックする。
+7. 右側のレスポンスに **`refresh_token`** が含まれる。その値をコピーする（これが `GOOGLE_REFRESH_TOKEN`）。  
+   ※ `refresh_token` が表示されない場合は、OAuth 同意画面で「テストユーザー」に自分の Gmail を追加したうえで、もう一度 Step 5 からやり直す（初回のみ出ることがある）。
+
+### 3. Render の環境変数に追加する
+
+Render ダッシュボード → **free-time-line-bot** → **Environment** で、次の 3 つを追加する。
+
+| Key | Value |
+|-----|--------|
+| `GOOGLE_CLIENT_ID` | 手順 1 でコピーしたクライアント ID |
+| `GOOGLE_CLIENT_SECRET` | 手順 1 でコピーしたクライアントシークレット |
+| `GOOGLE_REFRESH_TOKEN` | 手順 2 でコピーした refresh_token |
+
+**GOOGLE_ACCESS_TOKEN** は、この 3 つを設定すれば**不要**（空欄でよい）。保存後、必要に応じて再デプロイする。
 - エラーが出たときは、Render の **「Logs」** タブで `[サーバーエラー]` や `Webhook handling error` の内容を確認してください。
+
+---
+
+## トラブルシュート: LINE で日付を入れても何も応答がない
+
+次の順で確認する。
+
+1. **LINE の Webhook URL**
+   - LINE Developers → 該当チャネル → **Messaging API** タブ。
+   - **Webhook URL** が **`https://free-time-line-bot.onrender.com/webhook`** になっているか（末尾の `/webhook` を忘れない）。
+   - **「Webhook の利用」** が **オン** になっているか。
+
+2. **Render のサービスが動いているか**
+   - ブラウザで **`https://free-time-line-bot.onrender.com/health`** を開く。**「OK」** と出れば起動している。
+   - 無料プランでスリープしていると、初回は 50 秒以上かかることがある。**1 回目は「3/1」を送って 1 分ほど待ち、もう一度「3/1」を送って** みる（2 回目で返信が来ることがある）。
+
+3. **Render の Logs を確認する**
+   - Render ダッシュボード → **free-time-line-bot** → 左メニュー **「Logs」**。
+   - LINE で「3/1」を送った直後に **`[Webhook] イベント受信: 1 件`** が出ているか。
+     - **出ていない** → LINE からリクエストが届いていない。Webhook URL または「Webhook の利用」を再確認。
+     - **出ているがそのあとエラー** → ログのエラー内容に従って対処（例: Google トークン期限切れなら `GOOGLE_ACCESS_TOKEN` を更新）。
+
+4. **環境変数**
+   - Render → **Environment** で `LINE_CHANNEL_SECRET`・`LINE_CHANNEL_ACCESS_TOKEN`・`GOOGLE_ACCESS_TOKEN` が設定されているか。変更したあとは再デプロイする。

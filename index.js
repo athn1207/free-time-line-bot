@@ -22,6 +22,10 @@ if (!hasSecret || !hasToken) {
   process.exit(1);
 }
 
+const hasGoogleRefresh =
+  !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN);
+console.log('Google:', hasGoogleRefresh ? 'リフレッシュトークン利用' : 'GOOGLE_ACCESS_TOKEN または tokenStore を使用');
+
 const express = require('express');
 const lineWebhook = require('./routes/lineWebhook');
 
