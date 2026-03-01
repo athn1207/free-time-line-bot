@@ -16,15 +16,23 @@ function minutesToTimeString(totalMinutes) {
 }
 
 /**
- * 予定の開始・終了を「その日の 0:00 からの分」に変換する
+ * 対象日の 0:00 JST（Asia/Tokyo）のタイムスタンプを返す（サーバーが UTC でも正しく動くように）
+ */
+function getMidnightJSTTimestamp(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return new Date(`${y}-${m}-${d}T00:00:00+09:00`).getTime();
+}
+
+/**
+ * 予定の開始・終了を「その日の 0:00 JST からの分」に変換する
  * @param {Date} date - 対象日（時刻は使わず日付だけ）
  * @param {{ start: { dateTime?: string, date?: string }, end: { dateTime?: string, date?: string } }} event - Google Calendar のイベント
  * @returns {{ startMinutes: number, endMinutes: number } | null} 対象日の 9:00〜22:00 と重なる部分のみ。終日や範囲外なら null の可能性
  */
 function eventToMinutesOnDay(date, event) {
-  const base = new Date(date);
-  base.setHours(0, 0, 0, 0);
-  const baseTime = base.getTime();
+  const baseTime = getMidnightJSTTimestamp(date);
 
   let startDate;
   let endDate;
