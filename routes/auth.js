@@ -68,11 +68,13 @@ router.get('/google/callback', async (req, res) => {
   const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   try {
     const result = await oauth2Client.getToken(code);
-    // ライブラリのバージョンで credentials / tokens / 直の payload で返る場合がある
-    const payload = result.credentials || result.tokens || result;
-    const refreshToken = payload && payload.refresh_token;
+    // google-auth-library は { tokens, res } を返す。tokens に refresh_token が入る
+    const payload = result?.tokens ?? result?.credentials ?? result;
+    const refreshToken = payload?.refresh_token;
     if (!refreshToken) {
-      console.error('[OAuth] レスポンスに refresh_token なし:', JSON.stringify(Object.keys(result || {})));
+      const keys = result ? Object.keys(result) : [];
+      console.error('[OAuth] refresh_token なし。result のキー:', keys.join(', '));
+      if (result?.tokens) console.error('[OAuth] tokens のキー:', Object.keys(result.tokens).join(', '));
       return res.status(400).send(
         'リフレッシュトークンが取得できませんでした。Google で「許可」を押したうえで、再度お試しください。'
       );
