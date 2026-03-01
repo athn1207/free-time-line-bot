@@ -224,7 +224,8 @@
 5. **「Authorize APIs」** をクリックし、Google でログインして **「許可」** する。
 6. **「Exchange authorization code for tokens」** をクリックする。
 7. 右側のレスポンスに **`refresh_token`** が含まれる。その値をコピーする（これが `GOOGLE_REFRESH_TOKEN`）。  
-   ※ `refresh_token` が表示されない場合は、OAuth 同意画面で「テストユーザー」に自分の Gmail を追加したうえで、もう一度 Step 5 からやり直す（初回のみ出ることがある）。
+   ※ `refresh_token` が表示されない場合は、OAuth 同意画面で「テストユーザー」に自分の Gmail を追加したうえで、もう一度 Step 5 からやり直す（初回のみ出ることがある）。  
+   ※ **「カレンダーを読む権限がありません」** と出る場合は、Step 4 で **`https://www.googleapis.com/auth/calendar.readonly` だけ** にチェックを入れ、Step 5 から **認証をやり直して** 新しい refresh_token を取得し、Render の GOOGLE_REFRESH_TOKEN を更新する。
 
 ### 3. Render の環境変数に追加する
 

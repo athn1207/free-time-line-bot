@@ -3,8 +3,8 @@
 仕事用の少人数向け LINE Bot。Googleカレンダーの予定から **9:00〜22:00** の空き時間を返します。
 
 - **課金なし**で構築（LINE・Google・Render/Railway の無料枠のみ）
-- データベースなし（トークンは JSON で簡易保存）
-- 将来 OAuth を追加しやすい設計
+- **マルチユーザー対応**: PostgreSQL と `DATABASE_URL` を設定すると、LINE の「連携」でユーザーごとに Google アカウントを紐付け可能（詳細は [MULTI_USER_SETUP.md](./MULTI_USER_SETUP.md)）
+- 単一ユーザー時は従来どおり環境変数の `GOOGLE_REFRESH_TOKEN` または tokenStore で運用可能
 
 ---
 
